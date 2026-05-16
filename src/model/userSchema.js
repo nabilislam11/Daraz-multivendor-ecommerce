@@ -23,7 +23,7 @@ const userSchema = new Schema(
       minLength: 8,
     },
     phone: {
-      type: true,
+      type: String,
       unique: true,
       sparse: true,
     },
