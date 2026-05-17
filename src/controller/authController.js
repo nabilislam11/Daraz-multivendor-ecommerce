@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const { v4: uuidv4 } = require("uuid");
 const { validationResult } = require("express-validator");
 const verificationToken = require("../model/verificationToken");
+const emptyFieldValidation = require("../utils/validation");
 exports.registration = async (req, res) => {
   try {
     const { name, email, password, phone, role } = req.body;
@@ -71,6 +72,77 @@ exports.registration = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error during Registraiton ",
+    });
+  }
+};
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    emptyFieldValidation(res, email, password);
+    // finds user
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credendial",
+      });
+    }
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credendial",
+      });
+    }
+    // Genaret token
+    const accessToken = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+        email: user.email,
+      },
+      process.env.JWT_ACCESS_SECRET,
+      { expiresIn: process.env.ACCESS_TOKEN_EXPIRY },
+    );
+    const refreshToken = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+        email: user.email,
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.REFRESH_TOKEN_EXPIRY },
+    );
+    // save refresh token to user
+    user.refreshTokens.push({
+      token: refreshToken,
+      createdAt: new Date(),
+      // expiresAt: new Date(Date.now() + 7*24*60*60*1000) optional,
+    });
+    await user.save();
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      samSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 100,
+      path: "/",
+    });
+    res.status(200).json({
+      success: true,
+      message: "Login Successful ",
+      accessToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+      },
+    });
+  } catch (error) {
+    console.log(error, "Login errro");
+    res.status(500).json({
+      success: false,
+      message: "Server error",
     });
   }
 };
