@@ -6,7 +6,10 @@ const cookieParser = require("cookie-Parser");
 const dbConnect = require("./config/dbConnect");
 dbConnect();
 const authRoutes = require("./routes/auth");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpacs = require("./config/swagger");
 const app = express();
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpacs));
 app.use(express.json({ limit: "10kb" }));
 app.use(
   cors({
