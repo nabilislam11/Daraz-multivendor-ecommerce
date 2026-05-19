@@ -1,45 +1,60 @@
 const express = require("express");
-const { registration, login } = require("../controller/authController");
+const {
+  registration,
+  login,
+  refreshToken,
+} = require("../controller/authController");
 const { verifyEmail } = require("../controller/verifyEmail");
+
 const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/auth/register
+ * /api/v1/auth/register:
  *   post:
- *       summey: Register a new user (customer or vendor)
- *       tags:[Auth]
- *       requestBody:
- *            required:true
- *            content:
- *               application/json:
- *                    schema:
- *                          type:object
- *                          required:
- *                                 - name
- *                                 - email
- *                                 - password
- *                           properties:
- *                                  name:
- *                                      type:string
- *                                  email:
- *                                      type:string
- *                                      formate:emial
- *                                  password:
- *                                       type:string
- *                                       formate: password
- *                                  role:
- *                                       type:string
- *                                       enum:["customer","vendor"]
- *       responses:
- *             201:
- *                 description: USer registration succesfull
- *             401:
- *                 description: Bad requiest
+ *     summary: Register a new user (customer or vendor)
+ *     tags: [Auth]
  *
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *
+ *             properties:
+ *               name:
+ *                 type: string
+ *
+ *               email:
+ *                 type: string
+ *                 format: email
+ *
+ *               password:
+ *                 type: string
+ *
+ *               role:
+ *                 type: string
+ *                 enum: [customer, vendor]
+ *
+ *     responses:
+ *       201:
+ *         description: User registration successful
+ *
+ *       400:
+ *         description: Bad request
  */
-router.post("./registration", registration);
-router.get("./verify-email", verifyEmail);
-router.post("./login", login);
+
+router.post("/register", registration);
+
+router.get("/verify-email", verifyEmail);
+
+router.post("/login", login);
+router.post("/refresh-token", refreshToken);
 
 module.exports = router;

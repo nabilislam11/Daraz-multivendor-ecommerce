@@ -146,3 +146,55 @@ exports.login = async (req, res) => {
     });
   }
 };
+exports.refreshToken = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      return res.status(400).json({ message: "No refresh token" });
+    }
+    const user = await User.findOne({
+      refreshTokens: {
+        $elemMatch: {
+          token: refreshToken,
+        },
+      },
+    });
+    if (!user) {
+      res.clearCookie("refreshToken");
+      return res.status(403).json({
+        message: "Invalid refresh token ",
+      });
+    }
+    // verifyrefresh token
+    jwt.verify(
+      refreshToken.process.env.JWT_REFRESH_SECRET,
+      async (err, decoded) => {
+        if (err) {
+          res.clearCookie("refreshToken");
+          return res.status(403).json({
+            message: "Invalid refresh token or expire refresh token  ",
+          });
+        }
+        const newAccessToken = jwt.sign(
+          {
+            id: user._id,
+            role: user.role,
+            email: user.email,
+          },
+
+          process.env.JWT_ACCESS_SECRET,
+          { expiresIn: process.env.ACCESS_TOKEN_EXPIRY },
+        );
+        return res.status(200).json({
+          success: true,
+          message: "newAccessToken",
+        });
+      },
+    );
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
